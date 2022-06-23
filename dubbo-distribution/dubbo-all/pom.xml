@@ -417,8 +417,8 @@
                                     <include>org.apache.dubbo:dubbo-remoting-http</include>
                                     <include>org.apache.dubbo:dubbo-remoting-netty4</include>
                                     <include>org.apache.dubbo:dubbo-remoting-netty</include>
-                                    <include>org.apache.dubbo:dubbo-remoting-zookeeper-curator5</include>
                                     <include>org.apache.dubbo:dubbo-remoting-zookeeper</include>
+                                    <include>org.apache.dubbo:dubbo-remoting-zookeeper-curator5</include>
                                     <include>org.apache.dubbo:dubbo-remoting</include>
                                     <include>org.apache.dubbo:dubbo-rpc-api</include>
                                     <include>org.apache.dubbo:dubbo-rpc-dubbo</include>
@@ -431,6 +431,7 @@
                                     <include>org.apache.dubbo:dubbo-serialization-hessian2</include>
                                     <include>org.apache.dubbo:dubbo-serialization-jdk</include>
                                     <include>org.apache.dubbo:dubbo-serialization</include>
+                                    <include>org.apache.dubbo:dubbo-compiler</include>
                                 </includes>
                             </artifactSet>
                             <transformers>
@@ -1073,7 +1074,7 @@
                                 <transformer
                                     implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>
-                                        META-INF/dubbo/internal/org.apache.dubbo.rpc.protocol.tri.PathResolver
+                                        META-INF/dubbo/internal/org.apache.dubbo.rpc.PathResolver
                                     </resource>
                                 </transformer>
                                 <transformer

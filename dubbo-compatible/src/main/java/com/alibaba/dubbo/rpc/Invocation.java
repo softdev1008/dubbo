@@ -20,7 +20,9 @@ package com.alibaba.dubbo.rpc;
 import org.apache.dubbo.rpc.model.ServiceModel;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @Deprecated
 public interface Invocation extends org.apache.dubbo.rpc.Invocation {
@@ -60,6 +62,7 @@ public interface Invocation extends org.apache.dubbo.rpc.Invocation {
     default void setAttachmentIfAbsent(String key, Object value) {
         setObjectAttachmentIfAbsent(key, value);
     }
+
 
     @Override
     default String getServiceName() {
@@ -107,6 +110,16 @@ public interface Invocation extends org.apache.dubbo.rpc.Invocation {
     }
 
     @Override
+    default Map<String, Object> copyObjectAttachments() {
+        return new HashMap<>(getObjectAttachments());
+    }
+
+    @Override
+    default void foreachAttachment(Consumer<Map.Entry<String, Object>> consumer) {
+        getObjectAttachments().entrySet().forEach(consumer);
+    }
+
+    @Override
     default Object getObjectAttachment(String key) {
         return null;
     }
@@ -137,6 +150,11 @@ public interface Invocation extends org.apache.dubbo.rpc.Invocation {
         @Override
         public String getMethodName() {
             return delegate.getMethodName();
+        }
+
+        @Override
+        public String getServiceName() {
+            return null;
         }
 
         @Override

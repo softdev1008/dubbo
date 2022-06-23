@@ -22,9 +22,12 @@ import org.apache.dubbo.metadata.MetadataInfo;
 import org.apache.dubbo.registry.ProviderFirstParams;
 import org.apache.dubbo.rpc.RpcServiceContext;
 import org.apache.dubbo.rpc.model.ApplicationModel;
+import org.apache.dubbo.rpc.model.ModuleModel;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -114,7 +117,7 @@ public class InstanceAddressURLTest {
         // test reading of keys in instance and metadata work fine
         assertEquals("value1", instanceURL.getParameter("key1"));//return instance key
         assertNull(instanceURL.getParameter("delay"));// no service key specified
-        RpcServiceContext.setRpcContext(consumerURL);
+        RpcServiceContext.getServiceContext().setConsumerUrl(consumerURL);
         assertEquals("1000", instanceURL.getParameter("delay"));
         assertEquals("1000", instanceURL.getServiceParameter(consumerURL.getProtocolServiceKey(), "delay"));
         assertEquals("9000", instanceURL.getMethodParameter("sayHello", "timeout"));
@@ -163,6 +166,16 @@ public class InstanceAddressURLTest {
         assertEquals("newValue", instanceURL.getParameter("newKey"));
         assertEquals("newValue", instanceURL.getParameters().get("newKey"));
         assertEquals("newValue", instanceURL.getServiceParameters(url.getProtocolServiceKey()).get("newKey"));
+    }
+
+    @Test
+    public void test2() {
+        RpcServiceContext.getServiceContext().setConsumerUrl(null);
+        Assertions.assertNull(instanceURL.getScopeModel());
+
+        ModuleModel moduleModel = Mockito.mock(ModuleModel.class);
+        RpcServiceContext.getServiceContext().setConsumerUrl(URL.valueOf("").setScopeModel(moduleModel));
+        Assertions.assertEquals(moduleModel, instanceURL.getScopeModel());
     }
 
 }

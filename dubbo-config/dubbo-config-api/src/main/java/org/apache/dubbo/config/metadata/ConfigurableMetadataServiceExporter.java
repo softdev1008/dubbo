@@ -22,6 +22,8 @@ import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.utils.CollectionUtils;
 import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.dubbo.config.ApplicationConfig;
+import org.apache.dubbo.config.ArgumentConfig;
+import org.apache.dubbo.config.MethodConfig;
 import org.apache.dubbo.config.ProtocolConfig;
 import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.ServiceConfig;
@@ -30,14 +32,19 @@ import org.apache.dubbo.rpc.Protocol;
 import org.apache.dubbo.rpc.ProtocolServer;
 import org.apache.dubbo.rpc.model.ApplicationModel;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptyList;
+import static org.apache.dubbo.common.constants.CommonConstants.CORE_THREADS_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.DUBBO_PROTOCOL;
 import static org.apache.dubbo.common.constants.CommonConstants.METADATA_SERVICE_PORT_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.METADATA_SERVICE_PROTOCOL_KEY;
+import static org.apache.dubbo.common.constants.CommonConstants.THREADPOOL_KEY;
+import static org.apache.dubbo.common.constants.CommonConstants.THREADS_KEY;
 
 /**
  * Export metadata service
@@ -162,18 +169,48 @@ public class ConfigurableMetadataServiceExporter {
         ServiceConfig<MetadataService> serviceConfig = new ServiceConfig<>();
         serviceConfig.setScopeModel(applicationModel.getInternalModule());
         serviceConfig.setApplication(applicationConfig);
-        serviceConfig.setRegistry(new RegistryConfig("N/A"));
+        RegistryConfig registryConfig = new RegistryConfig("N/A");
+        registryConfig.setId("internal-metadata-registry");
+        serviceConfig.setRegistry(registryConfig);
+        serviceConfig.setRegister(false);
         serviceConfig.setProtocol(generateMetadataProtocol());
         serviceConfig.setInterface(MetadataService.class);
         serviceConfig.setDelay(0);
         serviceConfig.setRef(metadataService);
         serviceConfig.setGroup(applicationConfig.getName());
         serviceConfig.setVersion(MetadataService.VERSION);
-//            serviceConfig.setMethods(generateMethodConfig());
-        serviceConfig.setConnections(1);
-        serviceConfig.setExecutes(100);
+        serviceConfig.setMethods(generateMethodConfig());
+        serviceConfig.setConnections(1); // separate connection
+        serviceConfig.setExecutes(100); // max tasks running at the same time
+        Map<String, String> threadParams = new HashMap<>();
+        threadParams.put(THREADPOOL_KEY, "cached");
+        threadParams.put(THREADS_KEY, "100");
+        threadParams.put(CORE_THREADS_KEY, "2");
+        serviceConfig.setParameters(threadParams);
 
         return serviceConfig;
+    }
+
+    /**
+     * Generate Method Config for Service Discovery Metadata <p/>
+     * <p>
+     * Make {@link MetadataService} support argument callback,
+     * used to notify {@link org.apache.dubbo.registry.client.ServiceInstance}'s
+     * metadata change event
+     *
+     * @since 3.0
+     */
+    private List<MethodConfig> generateMethodConfig() {
+        MethodConfig methodConfig = new MethodConfig();
+        methodConfig.setName("getAndListenInstanceMetadata");
+
+        ArgumentConfig argumentConfig = new ArgumentConfig();
+        argumentConfig.setIndex(1);
+        argumentConfig.setCallback(true);
+
+        methodConfig.setArguments(Collections.singletonList(argumentConfig));
+
+        return Collections.singletonList(methodConfig);
     }
 
     // for unit test

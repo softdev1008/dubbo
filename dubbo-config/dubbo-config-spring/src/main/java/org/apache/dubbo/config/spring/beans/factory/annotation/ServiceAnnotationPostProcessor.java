@@ -230,7 +230,7 @@ public class ServiceAnnotationPostProcessor implements BeanDefinitionRegistryPos
                 }
 
                 for (BeanDefinitionHolder beanDefinitionHolder : beanDefinitionHolders) {
-                    processScannedBeanDefinition(beanDefinitionHolder, registry, scanner);
+                    processScannedBeanDefinition(beanDefinitionHolder);
                     servicePackagesHolder.addScannedClass(beanDefinitionHolder.getBeanDefinition().getBeanClassName());
                 }
             } else {
@@ -245,7 +245,7 @@ public class ServiceAnnotationPostProcessor implements BeanDefinitionRegistryPos
     }
 
     /**
-     * It'd better to use BeanNameGenerator instance that should reference
+     * It'd be better to use BeanNameGenerator instance that should reference
      * {@link ConfigurationClassPostProcessor#componentScanBeanNameGenerator},
      * thus it maybe a potential problem on bean name generation.
      *
@@ -318,13 +318,10 @@ public class ServiceAnnotationPostProcessor implements BeanDefinitionRegistryPos
      * Registers {@link ServiceBean} from new annotated {@link Service} {@link BeanDefinition}
      *
      * @param beanDefinitionHolder
-     * @param registry
-     * @param scanner
      * @see ServiceBean
      * @see BeanDefinition
      */
-    private void processScannedBeanDefinition(BeanDefinitionHolder beanDefinitionHolder, BeanDefinitionRegistry registry,
-                                              DubboClassPathBeanDefinitionScanner scanner) {
+    private void processScannedBeanDefinition(BeanDefinitionHolder beanDefinitionHolder) {
 
         Class<?> beanClass = resolveClass(beanDefinitionHolder);
 

@@ -40,12 +40,12 @@ public class ModuleServiceRepository {
     /**
      * services
      */
-    private ConcurrentMap<String, List<ServiceDescriptor>> services = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, List<ServiceDescriptor>> services = new ConcurrentHashMap<>();
 
     /**
      * consumers ( key - group/interface:version value - consumerModel list)
      */
-    private ConcurrentMap<String, List<ConsumerModel>> consumers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, List<ConsumerModel>> consumers = new ConcurrentHashMap<>();
 
     /**
      * providers
@@ -99,8 +99,15 @@ public class ModuleServiceRepository {
         frameworkServiceRepository.registerProvider(providerModel);
     }
 
+    public ServiceDescriptor registerService(ServiceDescriptor serviceDescriptor) {
+        return registerService(serviceDescriptor.getServiceInterfaceClass(),serviceDescriptor);
+    }
+
     public ServiceDescriptor registerService(Class<?> interfaceClazz) {
-        ServiceDescriptor serviceDescriptor = new ServiceDescriptor(interfaceClazz);
+        ServiceDescriptor serviceDescriptor = new ReflectionServiceDescriptor(interfaceClazz);
+        return registerService(interfaceClazz,serviceDescriptor);
+    }
+    public ServiceDescriptor registerService(Class<?> interfaceClazz,ServiceDescriptor serviceDescriptor) {
         List<ServiceDescriptor> serviceDescriptors = services.computeIfAbsent(interfaceClazz.getName(),
             k -> new CopyOnWriteArrayList<>());
         synchronized (serviceDescriptors) {
@@ -198,7 +205,7 @@ public class ModuleServiceRepository {
     }
 
     public ServiceDescriptor lookupService(String interfaceName) {
-        if (services.containsKey(interfaceName)) {
+        if (interfaceName != null && services.containsKey(interfaceName)) {
             List<ServiceDescriptor> serviceDescriptors = services.get(interfaceName);
             return serviceDescriptors.size() > 0 ? serviceDescriptors.get(0) : null;
         } else {

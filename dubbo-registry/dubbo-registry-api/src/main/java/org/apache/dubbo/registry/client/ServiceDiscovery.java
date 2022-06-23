@@ -71,7 +71,7 @@ public interface ServiceDiscovery extends RegistryService, Prioritized {
 
     MetadataInfo getRemoteMetadata(String revision);
 
-    MetadataInfo getRemoteMetadata(String revision, ServiceInstance instance);
+    MetadataInfo getRemoteMetadata(String revision, List<ServiceInstance> instances);
 
     /**
      * Destroy the {@link ServiceDiscovery}
@@ -95,5 +95,7 @@ public interface ServiceDiscovery extends RegistryService, Prioritized {
      *
      * @return The description.
      */
+
+    @Override
     String toString();
 }

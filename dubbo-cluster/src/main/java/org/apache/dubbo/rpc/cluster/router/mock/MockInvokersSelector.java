@@ -25,6 +25,10 @@ import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.cluster.router.RouterSnapshotNode;
 import org.apache.dubbo.rpc.cluster.router.state.AbstractStateRouter;
 import org.apache.dubbo.rpc.cluster.router.state.BitList;
+import org.apache.dubbo.rpc.cluster.router.state.RouterGroupingState;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.apache.dubbo.rpc.cluster.Constants.INVOCATION_NEED_MOCK;
 import static org.apache.dubbo.rpc.cluster.Constants.MOCK_PROTOCOL;
@@ -61,7 +65,7 @@ public class MockInvokersSelector<T> extends AbstractStateRouter<T> {
             }
             return invokers.and(normalInvokers);
         } else {
-            String value = (String) invocation.getObjectAttachments().get(INVOCATION_NEED_MOCK);
+            String value = (String) invocation.getObjectAttachmentWithoutConvert(INVOCATION_NEED_MOCK);
             if (value == null) {
                 if (needToPrintMessage) {
                     messageHolder.set("invocation.need.mock not set. Return normal Invokers.");
@@ -99,4 +103,11 @@ public class MockInvokersSelector<T> extends AbstractStateRouter<T> {
         normalInvokers = clonedInvokers;
     }
 
+    @Override
+    protected String doBuildSnapshot() {
+        Map<String, BitList<Invoker<T>>> grouping = new HashMap<>();
+        grouping.put("Mocked", mockedInvokers);
+        grouping.put("Normal", normalInvokers);
+        return new RouterGroupingState<>(this.getClass().getSimpleName(), mockedInvokers.size() + normalInvokers.size(), grouping).toString();
+    }
 }

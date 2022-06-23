@@ -20,12 +20,18 @@ import org.apache.dubbo.qos.command.GreetingCommand;
 import org.apache.dubbo.qos.command.impl.ChangeTelnet;
 import org.apache.dubbo.qos.command.impl.CountTelnet;
 import org.apache.dubbo.qos.command.impl.DisableDetailProfiler;
+import org.apache.dubbo.qos.command.impl.DisableRouterSnapshot;
 import org.apache.dubbo.qos.command.impl.DisableSimpleProfiler;
 import org.apache.dubbo.qos.command.impl.EnableDetailProfiler;
+import org.apache.dubbo.qos.command.impl.EnableRouterSnapshot;
 import org.apache.dubbo.qos.command.impl.EnableSimpleProfiler;
+import org.apache.dubbo.qos.command.impl.GetEnabledRouterSnapshot;
+import org.apache.dubbo.qos.command.impl.GetRecentRouterSnapshot;
+import org.apache.dubbo.qos.command.impl.GetRouterSnapshot;
 import org.apache.dubbo.qos.command.impl.Help;
 import org.apache.dubbo.qos.command.impl.InvokeTelnet;
 import org.apache.dubbo.qos.command.impl.Live;
+import org.apache.dubbo.qos.command.impl.LoggerInfo;
 import org.apache.dubbo.qos.command.impl.Ls;
 import org.apache.dubbo.qos.command.impl.Offline;
 import org.apache.dubbo.qos.command.impl.OfflineApp;
@@ -42,6 +48,8 @@ import org.apache.dubbo.qos.command.impl.SelectTelnet;
 import org.apache.dubbo.qos.command.impl.SetProfilerWarnPercent;
 import org.apache.dubbo.qos.command.impl.ShutdownTelnet;
 import org.apache.dubbo.qos.command.impl.Startup;
+import org.apache.dubbo.qos.command.impl.SwitchLogLevel;
+import org.apache.dubbo.qos.command.impl.SwitchLogger;
 import org.apache.dubbo.qos.command.impl.Version;
 import org.apache.dubbo.rpc.model.FrameworkModel;
 
@@ -99,6 +107,14 @@ public class CommandHelperTest {
         expectedClasses.add(EnableSimpleProfiler.class);
         expectedClasses.add(DisableSimpleProfiler.class);
         expectedClasses.add(SetProfilerWarnPercent.class);
+        expectedClasses.add(GetRouterSnapshot.class);
+        expectedClasses.add(GetEnabledRouterSnapshot.class);
+        expectedClasses.add(EnableRouterSnapshot.class);
+        expectedClasses.add(DisableRouterSnapshot.class);
+        expectedClasses.add(GetRecentRouterSnapshot.class);
+        expectedClasses.add(LoggerInfo.class);
+        expectedClasses.add(SwitchLogger.class);
+        expectedClasses.add(SwitchLogLevel.class);
         assertThat(classes, containsInAnyOrder(expectedClasses.toArray(new Class<?>[0])));
     }
 

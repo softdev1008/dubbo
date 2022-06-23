@@ -30,8 +30,6 @@ import org.apache.dubbo.rpc.Result;
 import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
 
-import java.util.Map;
-
 import static org.apache.dubbo.common.constants.CommonConstants.DEFAULT_TIMEOUT;
 import static org.apache.dubbo.common.constants.CommonConstants.PROVIDER;
 import static org.apache.dubbo.common.constants.CommonConstants.TIMEOUT_KEY;
@@ -44,7 +42,13 @@ public class ProfilerServerFilter implements Filter, BaseFilter.Listener {
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         if (ProfilerSwitch.isEnableSimpleProfiler()) {
-            ProfilerEntry bizProfiler = Profiler.start("Receive request. Server invoke begin.");
+            ProfilerEntry bizProfiler;
+            Object localInvokeProfiler = invocation.get(Profiler.PROFILER_KEY);
+            if (localInvokeProfiler instanceof ProfilerEntry) {
+                bizProfiler = Profiler.enter((ProfilerEntry) localInvokeProfiler, "Receive request. Local server invoke begin.");
+            } else {
+                bizProfiler = Profiler.start("Receive request. Server invoke begin.");
+            }
             invocation.put(Profiler.PROFILER_KEY, bizProfiler);
             invocation.put(CLIENT_IP_KEY, RpcContext.getServiceContext().getRemoteAddressString());
         }
@@ -69,32 +73,32 @@ public class ProfilerServerFilter implements Filter, BaseFilter.Listener {
                 ProfilerEntry profiler = Profiler.release((ProfilerEntry) fromInvocation);
                 invocation.put(Profiler.PROFILER_KEY, profiler);
 
-                dumpIfNeed(invoker, invocation, profiler);
+                dumpIfNeed(invoker, invocation, (ProfilerEntry) fromInvocation);
             }
         }
     }
 
     private void dumpIfNeed(Invoker<?> invoker, Invocation invocation, ProfilerEntry profiler) {
         int timeout;
-        Object timeoutKey = invocation.getObjectAttachmentWithoutConvert(TIMEOUT_KEY);
-        if (timeoutKey instanceof Integer) {
-            timeout = (Integer) timeoutKey;
+        Object timeoutValue = invocation.getObjectAttachmentWithoutConvert(TIMEOUT_KEY);
+        if (timeoutValue instanceof Integer) {
+            timeout = (Integer) timeoutValue;
         } else {
             timeout = invoker.getUrl().getMethodPositiveParameter(invocation.getMethodName(), TIMEOUT_KEY, DEFAULT_TIMEOUT);
         }
         long usage = profiler.getEndTime() - profiler.getStartTime();
-        if ((usage / (1000_000L * ProfilerSwitch.getWarnPercent())) > timeout) {
+        if (((usage / (1000_000L * ProfilerSwitch.getWarnPercent())) > timeout) && timeout != -1) {
 
             StringBuilder attachment = new StringBuilder();
-            for (Map.Entry<String, Object> entry : invocation.getObjectAttachments().entrySet()) {
+            invocation.foreachAttachment((entry) -> {
                 attachment.append(entry.getKey()).append("=").append(entry.getValue()).append(";\n");
-            }
+            });
 
-            logger.warn(String.format("[Dubbo-Provider] execute service %s#%s cost %d.%06d ms, this invocation almost (maybe already) timeout\n" +
+            logger.warn(String.format("[Dubbo-Provider] execute service %s#%s cost %d.%06d ms, this invocation almost (maybe already) timeout. Timeout: %dms\n" +
                     "client: %s\n" +
                     "invocation context:\n%s" +
                     "thread info: \n%s",
-                invocation.getTargetServiceUniqueName(), invocation.getMethodName(), usage / 1000_000, usage % 1000_000,
+                invocation.getTargetServiceUniqueName(), invocation.getMethodName(), usage / 1000_000, usage % 1000_000, timeout,
                 invocation.get(CLIENT_IP_KEY), attachment, Profiler.buildDetail(profiler)));
         }
     }

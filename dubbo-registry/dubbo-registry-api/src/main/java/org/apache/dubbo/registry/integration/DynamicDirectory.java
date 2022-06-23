@@ -24,6 +24,7 @@ import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.utils.CollectionUtils;
 import org.apache.dubbo.common.utils.NetUtils;
+import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.dubbo.registry.AddressListener;
 import org.apache.dubbo.registry.NotifyListener;
 import org.apache.dubbo.registry.Registry;
@@ -54,7 +55,7 @@ import static org.apache.dubbo.remoting.Constants.CHECK_KEY;
 
 
 /**
- * RegistryDirectory
+ * DynamicDirectory
  */
 public abstract class DynamicDirectory<T> extends AbstractDirectory<T> implements NotifyListener {
 
@@ -75,7 +76,7 @@ public abstract class DynamicDirectory<T> extends AbstractDirectory<T> implement
     protected final Class<T> serviceType;
 
     /**
-     * Initialization at construction time, assertion not null, and always assign non null value
+     * Initialization at construction time, assertion not null, and always assign non-null value
      */
     protected final URL directoryUrl;
     protected final boolean multiGroup;
@@ -115,6 +116,10 @@ public abstract class DynamicDirectory<T> extends AbstractDirectory<T> implement
      */
     private final boolean shouldFailFast;
 
+    private volatile InvokersChangedListener invokersChangedListener;
+    private volatile boolean invokersChanged;
+
+
     public DynamicDirectory(Class<T> serviceType, URL url) {
         super(url, true);
 
@@ -127,7 +132,7 @@ public abstract class DynamicDirectory<T> extends AbstractDirectory<T> implement
             throw new IllegalArgumentException("service type is null.");
         }
 
-        if (url.getServiceKey() == null || url.getServiceKey().length() == 0) {
+        if (StringUtils.isEmpty(url.getServiceKey())) {
             throw new IllegalArgumentException("registry serviceKey is null.");
         }
 
@@ -147,6 +152,11 @@ public abstract class DynamicDirectory<T> extends AbstractDirectory<T> implement
     @Override
     public void addServiceListener(ServiceInstancesChangedListener instanceListener) {
         this.serviceListener = instanceListener;
+    }
+
+    @Override
+    public ServiceInstancesChangedListener getServiceListener() {
+        return this.serviceListener;
     }
 
     public void setProtocol(Protocol protocol) {
@@ -298,7 +308,7 @@ public abstract class DynamicDirectory<T> extends AbstractDirectory<T> implement
 
         ExtensionLoader<AddressListener> addressListenerExtensionLoader = getUrl().getOrDefaultModuleModel().getExtensionLoader(AddressListener.class);
         List<AddressListener> supportedListeners = addressListenerExtensionLoader.getActivateExtension(getUrl(), (String[]) null);
-        if (supportedListeners != null && !supportedListeners.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(supportedListeners)) {
             for (AddressListener addressListener : supportedListeners) {
                 addressListener.destroy(getConsumerUrl(), this);
             }
@@ -326,9 +336,6 @@ public abstract class DynamicDirectory<T> extends AbstractDirectory<T> implement
             logger.warn("Failed to destroy service " + serviceKey, t);
         }
     }
-
-    private volatile InvokersChangedListener invokersChangedListener;
-    private volatile boolean invokersChanged;
 
     public synchronized void setInvokersChangedListener(InvokersChangedListener listener) {
         this.invokersChangedListener = listener;

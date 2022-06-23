@@ -16,6 +16,7 @@
  */
 package org.apache.dubbo.rpc.model;
 
+import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.config.ModuleEnvironment;
 import org.apache.dubbo.common.context.ModuleExt;
 import org.apache.dubbo.common.deploy.ApplicationDeployer;
@@ -28,6 +29,7 @@ import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.utils.Assert;
 import org.apache.dubbo.config.context.ModuleConfigManager;
 
+import java.util.HashMap;
 import java.util.Set;
 
 /**
@@ -49,7 +51,7 @@ public class ModuleModel extends ScopeModel {
     }
 
     public ModuleModel(ApplicationModel applicationModel, boolean isInternal) {
-        super(applicationModel, ExtensionScope.MODULE);
+        super(applicationModel, ExtensionScope.MODULE, isInternal);
         Assert.notNull(applicationModel, "ApplicationModel can not be null");
         this.applicationModel = applicationModel;
         applicationModel.addModule(this, isInternal);
@@ -67,7 +69,6 @@ public class ModuleModel extends ScopeModel {
         if (applicationDeployer != null) {
             applicationDeployer.notifyModuleChanged(this, DeployState.PENDING);
         }
-        this.internalModule = isInternal;
     }
 
     @Override
@@ -121,6 +122,11 @@ public class ModuleModel extends ScopeModel {
             moduleEnvironment = null;
         }
 
+        if (moduleConfigManager != null) {
+            moduleConfigManager.destroy();
+            moduleConfigManager = null;
+        }
+
         // destroy application if none pub module
         applicationModel.tryDestroy();
     }
@@ -168,5 +174,23 @@ public class ModuleModel extends ScopeModel {
     @Deprecated
     public void setModuleEnvironment(ModuleEnvironment moduleEnvironment) {
         this.moduleEnvironment = moduleEnvironment;
+    }
+
+    public ConsumerModel registerInternalConsumer(Class<?> internalService, URL url) {
+        ServiceMetadata serviceMetadata = new ServiceMetadata();
+        serviceMetadata.setVersion(url.getVersion());
+        serviceMetadata.setGroup(url.getGroup());
+        serviceMetadata.setDefaultGroup(url.getGroup());
+        serviceMetadata.setServiceInterfaceName(internalService.getName());
+        serviceMetadata.setServiceType(internalService);
+        String servyceKey = URL.buildKey(internalService.getName(), url.getGroup(), url.getVersion());
+        serviceMetadata.setServiceKey(servyceKey);
+
+        ConsumerModel consumerModel = new ConsumerModel(serviceMetadata.getServiceKey(), "jdk", serviceRepository.lookupService(serviceMetadata.getServiceInterfaceName()), null,
+            this, serviceMetadata, new HashMap<>());
+
+        logger.info("Dynamically registering consumer model " + servyceKey + " into model " + this.getDesc());
+        serviceRepository.registerConsumer(consumerModel);
+        return consumerModel;
     }
 }
